@@ -1,10 +1,11 @@
-from django.shortcuts import render
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login, logout, authenticate
-from django.shortcuts import redirect
-from django.db import IntegrityError
 from .forms import UserCreateForm
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
+from django.db import IntegrityError
+from django.shortcuts import redirect
+from django.shortcuts import render
 
 
 def signupaccount(request):
@@ -36,6 +37,7 @@ def signupaccount(request):
             )
 
 
+@login_required
 def logoutaccount(request):
     logout(request)
     return redirect("home")

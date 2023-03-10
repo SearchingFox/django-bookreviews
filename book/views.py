@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from .forms import ReviewForm
+from .models import Book, Review
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from .models import Book, Review
-from .forms import ReviewForm
+from django.shortcuts import render, redirect
 
 
 def home(request):
@@ -16,9 +17,20 @@ def home(request):
 
 def detail(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
-    return render(request, "detail.html", {"book": book})
+    reviews = Review.objects.filter(book=book)
+    return render(request, "detail.html", {"book": book, "reviews": reviews})
 
 
+def signup(request):
+    email = request.GET.get("email")
+    return render(request, "signup.html", {"email": email})
+
+
+def about(request):
+    return HttpResponse("<h1>Welcome to About</h1>")
+
+
+@login_required
 def createreview(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     if request.method == "GET":
@@ -41,10 +53,27 @@ def createreview(request, book_id):
             )
 
 
-def signup(request):
-    email = request.GET.get("email")
-    return render(request, "signup.html", {"email": email})
+@login_required
+def updatereview(request, review_id):
+    review = get_object_or_404(Review, pk=review_id, user=request.user)
+    if request.method == "GET":
+        form = ReviewForm(instance=review)
+        return render(request, "updatereview.html", {"review": review, "form": form})
+    else:
+        try:
+            form = ReviewForm(request.POST, instance=review)
+            form.save()
+            return redirect("detail", review.book.id)
+        except ValueError:
+            return render(
+                request,
+                "updatereview.html",
+                {"review": review, "form": form, "error": "Bad data in form"},
+            )
 
 
-def about(request):
-    return HttpResponse("<h1>Welcome to About</h1>")
+@login_required
+def deletereview(request, review_id):
+    review = get_object_or_404(Review, pk=review_id, user=request.user)
+    review.delete()
+    return redirect("detail", review.book.id)
